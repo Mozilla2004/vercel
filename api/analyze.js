@@ -1,7 +1,21 @@
 // Vercel Serverless Function for Reply-Decision Engine
 // Handles /api/analyze endpoint
 
+export const config = {
+  runtime: 'nodejs18',
+};
+
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -17,7 +31,11 @@ export default async function handler(req, res) {
     // Get Qwen API key from environment variables
     const API_KEY = process.env.QWEN_API_KEY;
     if (!API_KEY) {
-      return res.status(500).json({ error: 'QWEN_API_KEY not configured' });
+      console.error('QWEN_API_KEY not configured in environment');
+      return res.status(500).json({
+        error: 'Server configuration error',
+        details: 'QWEN_API_KEY not configured. Please contact administrator.'
+      });
     }
 
     const prompt = `你是"AI-Native 通信判断系统 v1.0"，站在收件人侧，判断邮件是否必须回复。
@@ -67,15 +85,23 @@ ${mail}`;
 
     if (!qwenResponse.ok) {
       const errorText = await qwenResponse.text();
-      console.error('Qwen API error:', errorText);
-      return res.status(500).json({ error: 'Qwen API request failed' });
+      console.error('Qwen API error:', qwenResponse.status, errorText);
+      return res.status(500).json({
+        error: 'Qwen API request failed',
+        status: qwenResponse.status,
+        details: errorText
+      });
     }
 
     const qwenData = await qwenResponse.json();
     const result = qwenData.choices?.[0]?.message?.content;
 
     if (!result) {
-      return res.status(500).json({ error: 'Invalid response from Qwen API' });
+      console.error('Invalid Qwen response:', qwenData);
+      return res.status(500).json({
+        error: 'Invalid response from Qwen API',
+        details: 'No content in response'
+      });
     }
 
     // Return the result
@@ -83,6 +109,9 @@ ${mail}`;
 
   } catch (error) {
     console.error('Error in analyze function:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
   }
 }

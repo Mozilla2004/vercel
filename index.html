@@ -669,10 +669,24 @@ ${mail}`;
       })
     });
 
+    // Check response status
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // Check content type
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error("非 JSON 响应:", text.substring(0, 200));
+      throw new Error("API 返回格式错误（可能未配置环境变量），请检查 Vercel 设置");
+    }
+
     const data = await response.json();
 
     if (data.error) {
-      throw new Error(data.error);
+      const errorMsg = data.details ? `${data.error}\n\n详细信息: ${data.details}` : data.error;
+      throw new Error(errorMsg);
     }
 
     if (data.result) {
