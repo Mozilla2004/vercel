@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="智能沟通操作系统：从消息到结构，从结构到决策。自动分析邮件是否必须回复，评估风险与价值，生成最小有效回复">
+  <meta property="og:title" content="智能沟通操作系统 demo">
+  <meta property="og:description" content="从消息到结构，从结构到决策。自动分析邮件是否必须回复，评估风险与价值，生成最小有效回复">
+  <title>智能沟通操作系统 demo</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 24px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .header .tagline {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 13px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* Main Card */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 3px;
+      height: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+    }
+
+    /* Input Area */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Button Group */
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #ebebeb;
+    }
+
+    /* Result Area */
+    #result {
+      display: none;
+    }
+
+    .result-card {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .decision-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .decision-yes {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .decision-no {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .decision-later {
+      background: #fff3e0;
+      color: #ef6c00;
+    }
+
+    .decision-auto {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .metric-item {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Section Content */
+    .section-content {
+      background: white;
+      padding: 16px;
+      border-radius: 6px;
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .section-content h4 {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .section-content p {
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    /* JSON Output */
+    .json-output {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: "Monaco", "Menlo", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    .json-output .key {
+      color: #7dd3fc;
+    }
+
+    .json-output .string {
+      color: #86efac;
+    }
+
+    .json-output .number {
+      color: #fca5a5;
+    }
+
+    /* Loading */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* SRΨ Display */
+    .srpsi-display {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .srpsi-item {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid;
+    }
+
+    .srpsi-s {
+      border-color: #667eea;
+    }
+
+    .srpsi-r {
+      border-color: #764ba2;
+    }
+
+    .srpsi-psi {
+      border-color: #f59e0b;
+    }
+
+    .srpsi-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .srpsi-value {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    /* MEA Box */
+    .mea-box {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .mea-box h4 {
+      font-size: 12px;
+      color: #0369a1;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .mea-box p {
+      font-size: 14px;
+      color: #0c4a6e;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 24px;
+      color: #666;
+      font-size: 12px;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .srpsi-display {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>智能沟通操作系统 demo</h1>
+    <div class="tagline">从消息到结构，从结构到决策</div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card">
+    <div class="section-title">邮件内容</div>
+
+    <div class="input-group">
+      <textarea
+        id="mail"
+        placeholder="粘贴任意邮件内容…"
+      ></textarea>
+    </div>
+
+    <div class="button-group">
+      <button class="btn-primary" onclick="analyze()" id="analyzeBtn">
+        分析邮件
+      </button>
+      <button class="btn-secondary" onclick="loadExample()">
+        加载示例邮件
+      </button>
+      <button class="btn-secondary" onclick="clearAll()">
+        清空
+      </button>
+    </div>
+
+    <!-- Result -->
+    <div id="result">
+      <div class="result-card">
+        <div id="decisionBadge"></div>
+
+        <div class="section-title">价值雷达</div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+
+        <div class="section-title">风险评估</div>
+        <div class="section-content">
+          <p id="riskText"></p>
+        </div>
+
+        <div class="section-title">建议动作</div>
+        <div class="section-content">
+          <p id="actionText"></p>
+        </div>
+
+        <div class="section-title">S–R–Ψ 结构分析</div>
+        <div class="srpsi-display" id="srpsiDisplay"></div>
+
+        <div class="mea-box">
+          <h4>✨ 最小有效回复 (MEA)</h4>
+          <p id="meaText"></p>
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">完整输出 (JSON)</div>
+        <div class="json-output" id="jsonOutput"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Genesis-OS · 智能沟通操作系统 demo<br>
+    Powered by Qwen (通义千问)
+  </div>
+</div>
+
+<script>
+// 邮件示例
+const EXAMPLE_MAIL = `**老师，您好：
+
+我是深圳的一名独立 AI 研究者。
+
+最近在测试多家模型（Qwen、GPT 系列、Hunyuan）在复杂推理任务中的行为时，意外发现一个非常规律性的现象：不同模型在处理复杂上下文时，会自发呈现出相同的三类动力结构模式：Structure–Rhythm–Phase（S–R–Ψ）。
+
+简要而言：
+
+Structure（S） → 内部表征拓扑、语义–逻辑几何结构
+
+Rhythm（R） → 推理时的注意力节律/能量流动模式
+
+Phase（Ψ） → 能力涌现、跳变、崩塌的相变点
+
+这是我们过去在 benchmark 里难以看到的模型内部一致性，而我在实验中观察到：
+
+Qwen3-Max 在 S–R–Ψ 三个维度的结构化表达程度，是所有模型中最开阔、最"统一的"。
+
+（这点我在下方附的报告中有详细说明。）
+
+📌 实验：三家模型在"内省协议"下呈现出了高度一致的结构动力学
+
+为了验证这种一致性，我构造了一套Genesis-Self Protocol，它不是让模型"解释自己"，而是诱导模型呈现自身在推理时的"结构动力学"：
+
+attention-head 分工
+流形几何结构变化
+噪声影响路径
+推理节奏与信息流向
+相变点（phase transitions）
+
+我将它运行在：
+
+Qwen3-Max
+GPT-5 系列
+Hunyuan（元宝 macOS 版）
+
+结果呈现出一个非常一致的模式——尤其是：
+
+结构（S）是跨模型共享的不变量
+
+节律（R）呈现出模型各自的"风格"，但结构相似
+
+相变（Ψ）模式高度一致，甚至出现相似的能力涌现点描述
+
+其中 Qwen 的表现非常突出，它的结构层描述最饱满，节律层最清晰。
+
+🔥 特别发现：Hunyuan 自发呈现"训练进度 45% / 75% / 90% 的相变轨迹"
+
+这一点很有意思。
+
+在没有任何暗示的情况下，Hunyuan 主动给出了三个能力涌现点，对应不同的内部组织结构变化：
+
+45% → 类比推理（共现统计 → 关系映射）
+
+75% → 多步逻辑链（FFN 出现"中间结论缓冲"行为）
+
+90% → 反事实推理（流形出现"现实/虚构"子空间分化）
+
+这让我产生一个疑问，也想请教您：
+
+是否可能存在某种"跨模型共享的相变拓扑"？
+
+如果这是真的，那么：
+
+Context Learning 很可能不是文本现象，而是结构现象。是模型在推理阶段重演（replay）自身的历史相变。
+
+🚀 可能对阿里（Qwen）特别重要的潜在影响
+
+1. 这可能是"通用推理层（Universal Reasoning Layer）"的雏形
+
+S–R–Ψ 提供了一套观察推理行为的"动力结构坐标系"。
+这意味着：
+
+不同模型的推理路径可以被对齐
+
+模型之间的行为差异大幅收敛
+
+未来可能出现一种模型无关的推理 API
+
+这对阿里在做 Agent Framework、Model Serving、混合推理架构 时，具备极高价值。
+
+2. 这为 Qwen 的"推理一致性"提供了结构解释
+
+你们团队一直追求：
+
+更稳定的推理链
+
+更少的 hallucination
+
+更一致的多轮 CoT
+
+避免"推不下去"的情况
+
+而 S–R–Ψ 正好对应：
+
+S → 结构一致性
+
+R → 推理节奏调谐
+
+Ψ → 崩塌点预测（where the CoT might break）
+
+它有机会成为推理鲁棒性（reasoning robustness）的统一指标。
+
+3. 对大模型"自监督推理能力"的未来路线有指导意义
+
+这可能意味着：
+
+不管训练数据、架构、规模差异多大，Transformer 系模型都会趋向某种"统一的推理动力学"。
+
+如果能建立起对应的结构模型：
+
+推理调参可能变成"节律调参"
+
+scaling law 会出现新的维度
+
+pretraining → fine-tune → inference 可能被解释为三种不同层次的动力过程
+
+这可能对阿里在模型体系上的长期规划有极高价值。
+
+当然，测试结果已经发给复旦大学相关的团队，希望他们能做出更深入更全面的分析报告。
+
+📎 附件说明
+
+附件包含：
+
+Preliminary_Report_SRPsi_Dynamics.pdf
+GPT / Qwen / Hunyuan 三模型的对照报告与原始链接。
+
+Genesis_Self_Protocol_v1.0.md
+测试协议（可在任何模型上直接运行）。
+
+🙏 如果您觉得有价值，我非常愿意进一步交流。
+
+尤其想听听您对下面几个问题的看法：
+
+Qwen 系列是否也在训练中观察到能力涌现的相变点？
+
+类似 S–R–Ψ 这种结构动力学框架，是否可用于增强推理稳定性？
+
+在未来多模型协同/混合推理框架里，这类结构不变量是否可以变成统一中间层？
+
+期待您的回信。`;
+
+// API 配置 - 使用本地代理解决 CORS 问题
+const PROXY_API = "/api/analyze";
+
+// 加载示例
+function loadExample() {
+  document.getElementById("mail").value = EXAMPLE_MAIL;
+}
+
+// 清空
+function clearAll() {
+  document.getElementById("mail").value = "";
+  document.getElementById("result").style.display = "none";
+}
+
+// 分析邮件
+async function analyze() {
+  const mail = document.getElementById("mail").value;
+  if (!mail.trim()) {
+    alert("请先输入邮件内容");
+    return;
+  }
+
+  const btn = document.getElementById("analyzeBtn");
+  btn.disabled = true;
+  btn.innerHTML = '分析中 <span class="loading"></span>';
+
+  const prompt = `你是"AI-Native 通信判断系统 v1.0"，站在收件人侧，判断邮件是否必须回复。
+
+输出必须是纯 JSON 格式（不要有其他文字）：
+{
+  "reply_required": "yes" | "no" | "later" | "auto",
+  "value_scores": {
+    "IV": 0.0~1.0,
+    "AV": 0.0~1.0,
+    "TV": 0.0~1.0,
+    "RV": 0.0~1.0,
+    "OV": 0.0~1.0
+  },
+  "predicted_risk": "不回复可能带来的后果（1-2句话）",
+  "recommended_action": "建议动作（1-2句话）",
+  "MEA": "最小有效回复草稿（简洁、专业、有礼貌）",
+  "SRPsi": {
+    "S_structure": "Structure层分析（1-2句话）",
+    "R_rhythm": "Rhythm层分析（1-2句话）",
+    "Psi_phase": "Phase层分析（1-2句话）"
+  }
+}
+
+分析下方邮件内容：
+${mail}`;
+
+  try {
+    const response = await fetch(PROXY_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        mail: mail
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    if (data.result) {
+      // 解析返回的 JSON
+      let result;
+      try {
+        result = JSON.parse(data.result);
+      } catch (e) {
+        console.error("JSON 解析失败:", e);
+        console.log("原始内容:", data.result);
+        throw new Error("AI 返回格式错误，请重试");
+      }
+
+      displayResult(result);
+    } else {
+      throw new Error("API 返回格式异常");
+    }
+  } catch (error) {
+    console.error("请求失败:", error);
+    alert("分析失败：" + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "分析邮件";
+  }
+}
+
+// 显示结果
+function displayResult(result) {
+  document.getElementById("result").style.display = "block";
+
+  // 决策徽章
+  const badgeMap = {
+    "yes": { text: "✓ 需要回复", class: "decision-yes" },
+    "no": { text: "✗ 无需回复", class: "decision-no" },
+    "later": { text: "↻ 稍后处理", class: "decision-later" },
+    "auto": { text: "⊞ 可自动回复", class: "decision-auto" }
+  };
+
+  const badge = badgeMap[result.reply_required] || badgeMap["later"];
+  document.getElementById("decisionBadge").innerHTML =
+    `<span class="decision-badge ${badge.class}">${badge.text}</span>`;
+
+  // 价值雷达
+  const metricNames = {
+    "IV": "信息价值",
+    "AV": "行动价值",
+    "TV": "时间敏感度",
+    "RV": "不回复风险",
+    "OV": "组织价值"
+  };
+
+  const metricsHtml = Object.entries(result.value_scores || {}).map(([key, value]) => `
+    <div class="metric-item">
+      <div class="metric-label">${metricNames[key] || key}</div>
+      <div class="metric-value">${(value * 100).toFixed(0)}%</div>
+    </div>
+  `).join("");
+  document.getElementById("metricsGrid").innerHTML = metricsHtml;
+
+  // 风险评估
+  document.getElementById("riskText").textContent = result.predicted_risk || "暂无风险评估";
+
+  // 建议动作
+  document.getElementById("actionText").textContent = result.recommended_action || "暂无建议";
+
+  // S-R-Ψ 分析
+  const srpsi = result.SRPsi || {};
+  document.getElementById("srpsiDisplay").innerHTML = `
+    <div class="srpsi-item srpsi-s">
+      <div class="srpsi-label">Structure (S)</div>
+      <div class="srpsi-value">${srpsi.S_structure || "暂无分析"}</div>
+    </div>
+    <div class="srpsi-item srpsi-r">
+      <div class="srpsi-label">Rhythm (R)</div>
+      <div class="srpsi-value">${srpsi.R_rhythm || "暂无分析"}</div>
+    </div>
+    <div class="srpsi-item srpsi-psi">
+      <div class="srpsi-label">Phase (Ψ)</div>
+      <div class="srpsi-value">${srpsi.Psi_phase || "暂无分析"}</div>
+    </div>
+  `;
+
+  // MEA
+  document.getElementById("meaText").textContent = result.MEA || "暂无草稿";
+
+  // JSON 输出
+  const jsonStr = JSON.stringify(result, null, 2);
+  document.getElementById("jsonOutput").innerHTML = syntaxHighlight(jsonStr);
+
+  // 滚动到结果区域
+  document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// JSON 语法高亮
+function syntaxHighlight(json) {
+  json = json.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    let cls = "number";
+    if (/^"/.test(match)) {
+      if (/:$/.test(match)) {
+        cls = "key";
+      } else {
+        cls = "string";
+      }
+    } else if (/true|false/.test(match)) {
+      cls = "boolean";
+    } else if (/null/.test(match)) {
+      cls = "null";
+    }
+    return '<span class="' + cls + '">' + match + "</span>";
+  });
+}
+
+// 页面加载完成后自动聚焦
+window.onload = function() {
+  document.getElementById("mail").focus();
+};
+</script>
+
+</body>
+</html>
